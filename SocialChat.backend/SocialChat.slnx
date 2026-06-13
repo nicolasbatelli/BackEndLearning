@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="SocialChat.Api/SocialChat.Api.csproj" />
+  <Project Path="SocialChat.Application.Tests/SocialChat.Application.Tests.csproj" />
+  <Project Path="SocialChat.Application/SocialChat.Application.csproj" />
+  <Project Path="SocialChat.Domain.Tests/SocialChat.Domain.Tests.csproj" />
+  <Project Path="SocialChat.Domain/SocialChat.Domain.csproj" />
+  <Project Path="SocialChat.Infrastructure/SocialChat.Infrastructure.csproj" />
+</Solution>

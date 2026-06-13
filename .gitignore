@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+SocialChat.frontEnd/node_modules/
+
+# Build outputs
+**/bin/
+**/obj/
+SocialChat.frontEnd/.next/
+SocialChat.frontEnd/out/
+
+# Secrets
+.env
+.env.local
+**/appsettings.*.local.json
+
+# IDE
+.vs/
+.idea/
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test
+coverage/

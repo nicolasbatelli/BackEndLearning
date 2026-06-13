@@ -1,0 +1,6 @@
+@SocialChat.Api_HostAddress = http://localhost:5049
+
+GET {{SocialChat.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
