@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Box, Button } from '@mui/material';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/Sidebar';
@@ -15,17 +15,15 @@ function HomePageContent() {
   const [selectedConversationId, setSelectedConversationId] = useState<string>();
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
 
-  const loadConversations = () => {
+  const loadConversations = useCallback(() => {
     if (!accessToken) return;
     apiRequest<ConversationDto[]>('/api/chat/conversations', {}, accessToken)
       .then((data) => {
         setConversations(data);
-        if (!selectedConversationId && data.length > 0) {
-          setSelectedConversationId(data[0].id);
-        }
+        setSelectedConversationId((current) => current ?? (data.length > 0 ? data[0].id : undefined));
       })
       .catch(() => setConversations([]));
-  };
+  }, [accessToken]);
 
   const updateConversationFavorite = (conversationId: string, isFavorite: boolean) => {
     setConversations((current) =>
@@ -39,19 +37,25 @@ function HomePageContent() {
 
   useEffect(() => {
     loadConversations();
-  }, [accessToken]);
+  }, [loadConversations]);
 
   useEffect(() => {
     if (!accessToken) return;
+
     const connection = createNotificationConnection(accessToken);
-    connection.start().catch(() => undefined);
     connection.on('ReceiveNotification', (notification: NotificationDto) => {
       setNotifications((current) => [notification, ...current]);
+      loadConversations();
     });
+
+    const startPromise = connection.start().catch((error) => {
+      console.error('Notification connection failed', error);
+    });
+
     return () => {
-      connection.stop().catch(() => undefined);
+      startPromise.finally(() => connection.stop().catch(() => undefined));
     };
-  }, [accessToken]);
+  }, [accessToken, loadConversations]);
 
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
 

@@ -27,33 +27,39 @@ export default function ChatWindow({ conversation, onFavoriteChange }: ChatWindo
   const [isFavorite, setIsFavorite] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const conversationId = conversation?.id;
+
   useEffect(() => {
-    if (!conversation || !accessToken) {
+    setIsFavorite(conversation?.isFavorite ?? false);
+  }, [conversation?.isFavorite]);
+
+  useEffect(() => {
+    if (!conversationId || !accessToken) {
       setMessages([]);
       return;
     }
 
-    setIsFavorite(conversation.isFavorite);
-    apiRequest<MessageDto[]>(`/api/chat/conversations/${conversation.id}/messages`, {}, accessToken)
+    apiRequest<MessageDto[]>(`/api/chat/conversations/${conversationId}/messages`, {}, accessToken)
       .then(setMessages)
       .catch(() => setMessages([]));
 
     const connection = createChatConnection(accessToken);
-    connection.start()
-      .then(() => connection.invoke('JoinConversation', conversation.id))
-      .catch(() => undefined);
-
     connection.on('ReceiveMessage', (message: MessageDto) => {
-      if (message.conversationId === conversation.id) {
+      if (message.conversationId === conversationId) {
         setMessages((current) => [...current, message]);
       }
     });
 
+    const startPromise = connection.start()
+      .then(() => connection.invoke('JoinConversation', conversationId))
+      .catch((error) => {
+        console.error('Chat connection failed', error);
+      });
+
     return () => {
-      connection.invoke('LeaveConversation', conversation.id).catch(() => undefined);
-      connection.stop().catch(() => undefined);
+      startPromise.finally(() => connection.stop().catch(() => undefined));
     };
-  }, [conversation, accessToken]);
+  }, [conversationId, accessToken]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

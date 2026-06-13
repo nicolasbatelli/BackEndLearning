@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using SocialChat.Application.Abstractions;
 using SocialChat.Application.Abstractions.Repositories;
 using SocialChat.Application.Common;
@@ -94,19 +95,22 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
     private readonly IPasswordHasher _passwordHasher;
     private readonly IEmailSender _emailSender;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<RegisterUserCommandHandler> _logger;
 
     public RegisterUserCommandHandler(
         IUserRepository userRepository,
         IRoleRepository roleRepository,
         IPasswordHasher passwordHasher,
         IEmailSender emailSender,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<RegisterUserCommandHandler> logger)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
         _passwordHasher = passwordHasher;
         _emailSender = emailSender;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<RegisterUserResult> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
@@ -147,7 +151,19 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var verificationLink = $"http://localhost:3000/verify-email?token={verificationToken}&email={Uri.EscapeDataString(email.Value)}";
-        await _emailSender.SendEmailVerificationAsync(email.Value, username.Value, verificationLink, cancellationToken);
+
+        try
+        {
+            await _emailSender.SendEmailVerificationAsync(email.Value, username.Value, verificationLink, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to send verification email to {Email}. Use this link to verify manually: {VerificationLink}",
+                email.Value,
+                verificationLink);
+        }
 
         return new RegisterUserResult(user.Id, "Registration successful. Please verify your email.");
     }
