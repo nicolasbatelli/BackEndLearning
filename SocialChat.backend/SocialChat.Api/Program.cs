@@ -18,21 +18,27 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IRealtimeNotifier, RealtimeNotifier>();
 
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+var allowedOrigins = (builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>())
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .Select(origin => origin.Trim().TrimEnd('/'))
+    .ToArray();
 
 if (builder.Environment.IsDevelopment())
 {
     allowedOrigins = allowedOrigins
         .Append("http://localhost:3000")
-        .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToArray();
 }
+
+allowedOrigins = allowedOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
 if (allowedOrigins.Length == 0)
 {
     throw new InvalidOperationException(
         "No CORS origins are configured. Set 'Cors:AllowedOrigins' in configuration.");
 }
+
+Console.WriteLine($"[CORS] Allowed origins: {string.Join(", ", allowedOrigins)}");
 
 builder.Services.AddCors(options =>
 {
