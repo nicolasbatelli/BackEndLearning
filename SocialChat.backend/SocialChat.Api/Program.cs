@@ -13,7 +13,7 @@ using SocialChat.Infrastructure.Persistence;
 using SocialChat.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
+//comment to trigger workflow
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IRealtimeNotifier, RealtimeNotifier>();
